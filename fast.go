@@ -78,6 +78,7 @@ func processUser(out io.Writer, user *User, seenBrowsers map[string]byte, i int)
 	fmt.Fprintf(out, "[%d] %s <%s>\n", i, user.Name, email)
 }
 
+//code produced by easyJson codegenerator. Placed here only for submiting the task
 func easyjson9f2eff5fDecodeCourseraHwHw3BenchDto(in *jlexer.Lexer, out *User) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
