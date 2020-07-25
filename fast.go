@@ -1,10 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
@@ -16,20 +16,20 @@ func FastSearch(out io.Writer) {
 	if err != nil {
 		panic(err)
 	}
+	defer file.Close()
 
-	fileContents, err := ioutil.ReadAll(file)
-	if err != nil {
-		panic(err)
-	}
+	// fileContents, err := ioutil.ReadAll(file)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	seenBrowsers := []string{}
-	uniqueBrowsers := 0
+	seenBrowsers2 := make(map[string]byte)
 	foundUsers := ""
-
-	lines := strings.Split(string(fileContents), "\n")
-
 	users := make([]map[string]interface{}, 0)
-	for _, line := range lines {
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
 		user := make(map[string]interface{})
 		// fmt.Printf("%v %v\n", err, line)
 		err := json.Unmarshal([]byte(line), &user)
@@ -57,40 +57,17 @@ func FastSearch(out io.Writer) {
 				continue
 			}
 			//strings.Contains(browser, "Android")
-			if strings.Contains(browser, "Android") {
-				isAndroid = true
-				notSeenBefore := true
-				for _, item := range seenBrowsers {
-					if item == browser {
-						notSeenBefore = false
-					}
-				}
-				if notSeenBefore {
+			a := strings.Contains(browser, "Android")
+			isAndroid = a || isAndroid
+			ie := strings.Contains(browser, "MSIE")
+			isMSIE = ie || isMSIE
+			if a || ie {
+				_, ok := seenBrowsers2[browser]
+				if !ok {
 					// log.Printf("SLOW New browser: %s, first seen: %s", browser, user["name"])
-					seenBrowsers = append(seenBrowsers, browser)
-					uniqueBrowsers++
-				}
-			}
-		}
-
-		for _, browserRaw := range browsers {
-			browser, ok := browserRaw.(string)
-			if !ok {
-				// log.Println("cant cast browser to string")
-				continue
-			}
-			if strings.Contains(browser, "MSIE") {
-				isMSIE = true
-				notSeenBefore := true
-				for _, item := range seenBrowsers {
-					if item == browser {
-						notSeenBefore = false
-					}
-				}
-				if notSeenBefore {
-					// log.Printf("SLOW New browser: %s, first seen: %s", browser, user["name"])
-					seenBrowsers = append(seenBrowsers, browser)
-					uniqueBrowsers++
+					//seenBrowsers = append(seenBrowsers, browser)
+					seenBrowsers2[browser] = 0
+					//uniqueBrowsers++
 				}
 			}
 		}
@@ -106,5 +83,5 @@ func FastSearch(out io.Writer) {
 	}
 
 	fmt.Fprintln(out, "found users:\n"+foundUsers)
-	fmt.Fprintln(out, "Total unique browsers", len(seenBrowsers))
+	fmt.Fprintln(out, "Total unique browsers", len(seenBrowsers2))
 }
