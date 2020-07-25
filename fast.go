@@ -18,13 +18,7 @@ func FastSearch(out io.Writer) {
 	}
 	defer file.Close()
 
-	// fileContents, err := ioutil.ReadAll(file)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
 	seenBrowsers2 := make(map[string]byte)
-	foundUsers := ""
 	users := make([]map[string]interface{}, 0, 1000)
 
 	scanner := bufio.NewScanner(file)
@@ -39,49 +33,45 @@ func FastSearch(out io.Writer) {
 		users = append(users, user)
 	}
 
+	fmt.Fprintln(out, "found users:")
 	for i, user := range users {
-
-		isAndroid := false
-		isMSIE := false
-
-		browsers, ok := user["browsers"].([]interface{})
-		if !ok {
-			// log.Println("cant cast browsers")
-			continue
-		}
-
-		for _, browserRaw := range browsers {
-			browser, ok := browserRaw.(string)
-			if !ok {
-				// log.Println("cant cast browser to string")
-				continue
-			}
-			//strings.Contains(browser, "Android")
-			a := strings.Contains(browser, "Android")
-			isAndroid = a || isAndroid
-			ie := strings.Contains(browser, "MSIE")
-			isMSIE = ie || isMSIE
-			if a || ie {
-				_, ok := seenBrowsers2[browser]
-				if !ok {
-					// log.Printf("SLOW New browser: %s, first seen: %s", browser, user["name"])
-					//seenBrowsers = append(seenBrowsers, browser)
-					seenBrowsers2[browser] = 0
-					//uniqueBrowsers++
-				}
-			}
-		}
-
-		if !(isAndroid && isMSIE) {
-			continue
-		}
-
-		// log.Println("Android and MSIE user:", user["name"], user["email"])
-		r := regexp.MustCompile("@")
-		email := r.ReplaceAllString(user["email"].(string), " [at] ")
-		foundUsers += fmt.Sprintf("[%d] %s <%s>\n", i, user["name"], email)
+		processUser(out, user, seenBrowsers2, i)
 	}
 
-	fmt.Fprintln(out, "found users:\n"+foundUsers)
-	fmt.Fprintln(out, "Total unique browsers", len(seenBrowsers2))
+	fmt.Fprintln(out, "\nTotal unique browsers", len(seenBrowsers2))
+}
+
+func processUser(out io.Writer, user map[string]interface{}, seenBrowsers map[string]byte, i int) {
+	isAndroid := false
+	isMSIE := false
+
+	browsers, ok := user["browsers"].([]interface{})
+	if !ok {
+		return
+	}
+
+	for _, browserRaw := range browsers {
+		browser, ok := browserRaw.(string)
+		if !ok {
+			continue
+		}
+		a := strings.Contains(browser, "Android")
+		isAndroid = a || isAndroid
+		ie := strings.Contains(browser, "MSIE")
+		isMSIE = ie || isMSIE
+		if a || ie {
+			_, ok := seenBrowsers[browser]
+			if !ok {
+				seenBrowsers[browser] = 0
+			}
+		}
+	}
+
+	if !(isAndroid && isMSIE) {
+		return
+	}
+	r := regexp.MustCompile("@")
+	email := r.ReplaceAllString(user["email"].(string), " [at] ")
+	fmt.Fprintf(out, "[%d] %s <%s>\n", i, user["name"], email)
+	//foundUsers += fmt.Sprintf("[%d] %s <%s>\n", i, user["name"], email)
 }
