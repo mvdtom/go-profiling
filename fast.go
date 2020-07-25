@@ -10,7 +10,12 @@ import (
 	"strings"
 )
 
-// вам надо написать более быструю оптимальную этой функции
+type User struct {
+	Name     string
+	Email    string
+	Browsers []string
+}
+
 func FastSearch(out io.Writer) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -25,7 +30,7 @@ func FastSearch(out io.Writer) {
 	i := 0
 	for scanner.Scan() {
 		line := scanner.Bytes()
-		user := make(map[string]interface{})
+		user := &User{}
 		err := json.Unmarshal(line, &user)
 		if err != nil {
 			panic(err)
@@ -37,20 +42,11 @@ func FastSearch(out io.Writer) {
 	fmt.Fprintln(out, "\nTotal unique browsers", len(seenBrowsers2))
 }
 
-func processUser(out io.Writer, user map[string]interface{}, seenBrowsers map[string]byte, i int) {
+func processUser(out io.Writer, user *User, seenBrowsers map[string]byte, i int) {
 	isAndroid := false
 	isMSIE := false
 
-	browsers, ok := user["browsers"].([]interface{})
-	if !ok {
-		return
-	}
-
-	for _, browserRaw := range browsers {
-		browser, ok := browserRaw.(string)
-		if !ok {
-			continue
-		}
+	for _, browser := range user.Browsers {
 		a := strings.Contains(browser, "Android")
 		isAndroid = a || isAndroid
 		ie := strings.Contains(browser, "MSIE")
@@ -67,6 +63,6 @@ func processUser(out io.Writer, user map[string]interface{}, seenBrowsers map[st
 		return
 	}
 	r := regexp.MustCompile("@")
-	email := r.ReplaceAllString(user["email"].(string), " [at] ")
-	fmt.Fprintf(out, "[%d] %s <%s>\n", i, user["name"], email)
+	email := r.ReplaceAllString(user.Email, " [at] ")
+	fmt.Fprintf(out, "[%d] %s <%s>\n", i, user.Name, email)
 }
