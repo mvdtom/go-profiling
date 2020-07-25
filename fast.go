@@ -28,14 +28,15 @@ func FastSearch(out io.Writer) {
 	fmt.Fprintln(out, "found users:")
 	scanner := bufio.NewScanner(file)
 	i := 0
+	user := User{}
 	for scanner.Scan() {
 		line := scanner.Bytes()
-		user := &User{}
+		//user := &User{}
 		err := json.Unmarshal(line, &user)
 		if err != nil {
 			panic(err)
 		}
-		processUser(out, user, seenBrowsers2, i)
+		processUser(out, &user, seenBrowsers2, i)
 		i++
 	}
 
