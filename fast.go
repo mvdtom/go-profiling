@@ -43,6 +43,8 @@ func FastSearch(out io.Writer) {
 	fmt.Fprintln(out, "\nTotal unique browsers", len(seenBrowsers2))
 }
 
+var r = regexp.MustCompile("@")
+
 func processUser(out io.Writer, user *User, seenBrowsers map[string]byte, i int) {
 	isAndroid := false
 	isMSIE := false
@@ -63,7 +65,6 @@ func processUser(out io.Writer, user *User, seenBrowsers map[string]byte, i int)
 	if !(isAndroid && isMSIE) {
 		return
 	}
-	r := regexp.MustCompile("@")
 	email := r.ReplaceAllString(user.Email, " [at] ")
 	fmt.Fprintf(out, "[%d] %s <%s>\n", i, user.Name, email)
 }
